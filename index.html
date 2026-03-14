@@ -1,0 +1,1041 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KIU Cloud PC — Windows 11 on Codespaces</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#020810;--panel:#071528;--border:rgba(0,200,255,0.15);
+    --accent:#00c8ff;--accent2:#0066ff;--accent3:#7b2fff;
+    --green:#00ff88;--red:#ff4466;--yellow:#ffcc00;
+    --text:#e8f4ff;--muted:#5a7a99;
+    --glow:0 0 20px rgba(0,200,255,0.4);--glow-sm:0 0 10px rgba(0,200,255,0.25);
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh;overflow-x:hidden;}
+  body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(0,200,255,0.04) 1px,transparent 1px),linear-gradient(90deg,rgba(0,200,255,0.04) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0;}
+  .aurora{position:fixed;top:-200px;left:50%;transform:translateX(-50%);width:900px;height:500px;background:radial-gradient(ellipse at center,rgba(0,102,255,0.18) 0%,rgba(123,47,255,0.1) 40%,transparent 70%);filter:blur(60px);pointer-events:none;z-index:0;animation:aurora-drift 8s ease-in-out infinite alternate;}
+  @keyframes aurora-drift{from{transform:translateX(-50%) scale(1);opacity:0.7;}to{transform:translateX(-48%) scale(1.1);opacity:1;}}
+
+  /* SCROLL REVEAL */
+  .reveal{opacity:1;transform:translateY(0);transition:opacity 0.65s ease,transform 0.65s ease;}
+  .reveal.rdy{opacity:0;transform:translateY(36px);}
+  .reveal.rdy.vis{opacity:1;transform:translateY(0);}
+  .reveal.rdy.up{opacity:0;transform:translateY(-36px);}
+  .rg>*{opacity:1;transform:translateY(0);transition:opacity 0.6s ease,transform 0.6s ease;}
+  .rg.rdy>*{opacity:0;transform:translateY(36px);}
+  .rg.rdy.vis>*:nth-child(1){opacity:1;transform:translateY(0);transition-delay:0s;}
+  .rg.rdy.vis>*:nth-child(2){opacity:1;transform:translateY(0);transition-delay:.1s;}
+  .rg.rdy.vis>*:nth-child(3){opacity:1;transform:translateY(0);transition-delay:.2s;}
+  .rg.rdy.vis>*:nth-child(4){opacity:1;transform:translateY(0);transition-delay:.3s;}
+  .rg.rdy.vis>*:nth-child(5){opacity:1;transform:translateY(0);transition-delay:.4s;}
+  .rg.rdy.vis>*:nth-child(6){opacity:1;transform:translateY(0);transition-delay:.5s;}
+  .rg.rdy.up>*{opacity:0;transform:translateY(-36px);}
+
+  /* NAV */
+  nav{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:18px 48px;background:rgba(2,8,16,0.85);backdrop-filter:blur(16px);border-bottom:1px solid var(--border);}
+  .nav-right{display:flex;align-items:center;gap:12px;}
+  .nav-logout-btn{padding:7px 16px;background:rgba(255,68,102,0.1);border:1px solid rgba(255,68,102,0.3);border-radius:100px;color:var(--red);font-family:'Space Mono',monospace;font-size:0.75rem;cursor:pointer;transition:all 0.2s;white-space:nowrap;}
+  .nav-logout-btn:hover{background:rgba(255,68,102,0.22);border-color:var(--red);}
+  .nav-user-name{display:flex;align-items:center;gap:8px;padding:6px 14px;background:rgba(0,200,255,0.06);border:1px solid var(--border);border-radius:100px;font-size:0.82rem;white-space:nowrap;}
+  .nav-user-name .u-avatar{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:700;color:#000;flex-shrink:0;}
+  .nav-user-name.is-admin .u-avatar{background:linear-gradient(135deg,#ffcc00,#ff8800);}
+  .nav-user-name:not(.is-admin) .u-avatar{background:linear-gradient(135deg,var(--accent2),var(--accent));}
+  .logo{font-family:'Orbitron',monospace;font-weight:900;font-size:1.1rem;letter-spacing:0.1em;color:var(--accent);text-shadow:var(--glow-sm);display:flex;align-items:center;gap:10px;}
+  .logo-dot{width:8px;height:8px;border-radius:50%;background:var(--accent);box-shadow:var(--glow);animation:pulse 2s infinite;}
+  @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.5;transform:scale(0.8)}}
+  .nav-links{display:flex;gap:28px;align-items:center;}
+  .nav-links a{color:var(--muted);text-decoration:none;font-size:0.85rem;letter-spacing:0.05em;transition:color 0.2s;}
+  .nav-links a:hover{color:var(--accent);}
+
+  /* HERO */
+  .hero{position:relative;z-index:1;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:120px 24px 80px;text-align:center;}
+  .badge{display:inline-flex;align-items:center;gap:8px;padding:6px 16px;border:1px solid var(--border);border-radius:100px;background:rgba(0,200,255,0.06);font-family:'Space Mono',monospace;font-size:0.7rem;color:var(--accent);letter-spacing:0.12em;text-transform:uppercase;margin-bottom:32px;animation:fade-in 0.6s ease both;}
+  .badge-dot{width:6px;height:6px;border-radius:50%;background:#00ff88;box-shadow:0 0 8px #00ff88;animation:pulse 1.5s infinite;}
+  h1{font-family:'Orbitron',monospace;font-size:clamp(2.8rem,7vw,5.5rem);font-weight:900;line-height:1.05;letter-spacing:-0.02em;margin-bottom:16px;animation:fade-up 0.7s ease 0.1s both;}
+  h1 span.blue{color:var(--accent);text-shadow:var(--glow);}
+  h1 span.purple{color:var(--accent3);}
+  .subtitle{font-size:1.1rem;color:var(--muted);max-width:540px;line-height:1.7;margin-bottom:48px;animation:fade-up 0.7s ease 0.2s both;}
+  .cta-group{display:flex;gap:16px;flex-wrap:wrap;justify-content:center;animation:fade-up 0.7s ease 0.3s both;}
+  .btn-primary{display:inline-flex;align-items:center;gap:10px;padding:16px 36px;background:linear-gradient(135deg,var(--accent2),var(--accent));border:none;border-radius:8px;color:#fff;font-family:'Orbitron',monospace;font-size:0.85rem;font-weight:700;letter-spacing:0.08em;text-decoration:none;cursor:pointer;position:relative;overflow:hidden;box-shadow:0 0 30px rgba(0,102,255,0.4),inset 0 1px 0 rgba(255,255,255,0.15);transition:transform 0.2s,box-shadow 0.2s;}
+  .btn-primary::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,transparent 30%,rgba(255,255,255,0.15) 50%,transparent 70%);transform:translateX(-100%);transition:transform 0.5s;}
+  .btn-primary:hover{transform:translateY(-2px);box-shadow:0 0 50px rgba(0,102,255,0.6),inset 0 1px 0 rgba(255,255,255,0.15);}
+  .btn-primary:hover::before{transform:translateX(100%);}
+  .btn-secondary{display:inline-flex;align-items:center;gap:10px;padding:16px 36px;background:transparent;border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:0.9rem;text-decoration:none;transition:border-color 0.2s,background 0.2s;}
+  .btn-secondary:hover{border-color:var(--accent);background:rgba(0,200,255,0.05);}
+
+  /* SECTION */
+  .section{position:relative;z-index:1;padding:80px 24px;max-width:1100px;margin:0 auto;}
+  .section-label{font-family:'Space Mono',monospace;font-size:0.7rem;color:var(--accent);letter-spacing:0.2em;text-transform:uppercase;margin-bottom:16px;opacity:0.8;}
+  .section-title{font-family:'Orbitron',monospace;font-size:clamp(1.5rem,3vw,2.2rem);font-weight:700;margin-bottom:48px;}
+  .divider{height:1px;background:linear-gradient(90deg,transparent,var(--border),transparent);margin:0 24px;}
+
+  /* MACHINES */
+  .machines{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin-bottom:40px;}
+  .machine-card{position:relative;background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:24px 20px;cursor:pointer;transition:border-color 0.2s,transform 0.2s,background 0.2s;overflow:hidden;}
+  .machine-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--accent),transparent);opacity:0;transition:opacity 0.3s;}
+  .machine-card:hover,.machine-card.selected{border-color:var(--accent);transform:translateY(-3px);background:rgba(0,200,255,0.05);}
+  .machine-card:hover::before,.machine-card.selected::before{opacity:1;}
+  .machine-card.selected::after{content:'✓';position:absolute;top:12px;right:12px;width:20px;height:20px;border-radius:50%;background:var(--accent);color:#000;font-size:11px;font-weight:900;display:flex;align-items:center;justify-content:center;}
+  .machine-name{font-family:'Space Mono',monospace;font-size:0.72rem;color:var(--accent);letter-spacing:0.1em;margin-bottom:12px;text-transform:uppercase;}
+  .machine-specs{display:flex;flex-direction:column;gap:6px;margin-bottom:16px;}
+  .spec{display:flex;align-items:center;gap:8px;font-size:0.85rem;}
+  .spec-val{color:var(--text);font-weight:500;}
+  .spec-label{color:var(--muted);font-size:0.78rem;}
+  .machine-price{font-family:'Orbitron',monospace;font-size:1rem;font-weight:700;color:var(--text);}
+  .machine-free{font-size:0.72rem;color:#00ff88;background:rgba(0,255,136,0.1);border:1px solid rgba(0,255,136,0.2);border-radius:4px;padding:2px 8px;margin-top:4px;display:inline-block;}
+
+  /* LAUNCH PANEL */
+  .launch-panel{background:var(--panel);border:1px solid var(--border);border-radius:16px;padding:36px;display:flex;align-items:flex-start;justify-content:space-between;gap:24px;flex-wrap:wrap;}
+  .launch-left{flex:1;min-width:260px;}
+  .launch-info h3{font-family:'Orbitron',monospace;font-size:1.1rem;margin-bottom:8px;}
+  .launch-info p{color:var(--muted);font-size:0.88rem;margin-bottom:20px;}
+  .token-wrap{position:relative;margin-bottom:14px;}
+  .token-input{width:100%;background:#010a14;border:1px solid var(--border);border-radius:10px;padding:12px 44px 12px 14px;color:var(--text);font-family:'Space Mono',monospace;font-size:0.78rem;letter-spacing:0.05em;outline:none;transition:border-color 0.2s,box-shadow 0.2s;}
+  .token-input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(0,200,255,0.1);}
+  .token-input::placeholder{color:var(--muted);letter-spacing:0.02em;}
+  .eye-btn{position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--muted);font-size:1rem;transition:color 0.2s;}
+  .eye-btn:hover{color:var(--accent);}
+  .token-hint{font-size:0.75rem;color:var(--muted);line-height:1.6;margin-bottom:16px;}
+  .token-hint a{color:var(--accent);text-decoration:none;}
+  .token-hint a:hover{text-decoration:underline;}
+  .status-row{display:flex;align-items:center;gap:8px;font-size:0.8rem;color:var(--muted);margin-bottom:12px;}
+  .sdot{width:8px;height:8px;border-radius:50%;background:var(--muted);transition:background 0.3s;flex-shrink:0;}
+  .sdot.spin{background:var(--accent);box-shadow:0 0 8px var(--accent);animation:blink 0.8s infinite;}
+  .sdot.ok{background:var(--green);}
+  .sdot.err{background:var(--red);}
+  @keyframes blink{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.4;transform:scale(0.7)}}
+  .launch-btn{display:inline-flex;align-items:center;gap:12px;padding:18px 40px;background:linear-gradient(135deg,#0040dd,#00aaff);border:none;border-radius:10px;color:#fff;font-family:'Orbitron',monospace;font-size:0.9rem;font-weight:700;letter-spacing:0.06em;cursor:pointer;box-shadow:0 0 40px rgba(0,150,255,0.35);transition:all 0.25s;white-space:nowrap;}
+  .launch-btn:hover:not(:disabled){transform:translateY(-3px) scale(1.02);box-shadow:0 0 60px rgba(0,150,255,0.55);}
+  .launch-btn:disabled{opacity:0.5;cursor:not-allowed;transform:none;}
+
+  /* LOG */
+  .log-box{background:#010a14;border:1px solid var(--border);border-radius:10px;padding:16px;font-family:'Space Mono',monospace;font-size:0.76rem;max-height:200px;overflow-y:auto;display:none;margin-top:20px;}
+  .log-box.show{display:block;}
+  .lg{margin-bottom:4px;line-height:1.6;}
+  .c-ok{color:var(--green)}.c-err{color:var(--red)}.c-info{color:var(--muted)}.c-hi{color:var(--accent)}.c-warn{color:var(--yellow)}
+
+  /* RESULT CARD */
+  .result-card{background:rgba(0,255,136,0.05);border:1px solid rgba(0,255,136,0.25);border-radius:12px;padding:22px;display:none;flex-direction:column;gap:16px;margin-top:20px;}
+  .result-card.show{display:flex;}
+  .r-title{font-family:'Orbitron',monospace;font-size:1rem;font-weight:700;color:var(--green);}
+  .r-timestamp{display:flex;align-items:center;gap:10px;font-family:'Space Mono',monospace;font-size:0.75rem;color:var(--muted);background:rgba(0,200,255,0.05);border:1px solid var(--border);border-radius:8px;padding:10px 14px;}
+  .r-rows{display:flex;flex-direction:column;gap:7px;}
+  .r-row{display:flex;align-items:center;gap:10px;font-size:0.82rem;flex-wrap:wrap;}
+  .r-lbl{color:var(--muted);min-width:120px;font-size:0.78rem;}
+  .r-val{color:var(--text);font-family:'Space Mono',monospace;font-size:0.75rem;background:rgba(0,200,255,0.07);padding:2px 9px;border-radius:5px;word-break:break-all;}
+
+  /* PORT 8006 */
+  .port-card{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;background:rgba(0,102,255,0.08);border:1px solid rgba(0,102,255,0.3);border-radius:12px;padding:18px 20px;}
+  .port-left{display:flex;align-items:center;gap:14px;}
+  .port-icon{font-size:1.8rem;flex-shrink:0;}
+  .port-title{font-family:'Orbitron',monospace;font-size:0.82rem;font-weight:700;color:var(--text);margin-bottom:4px;}
+  .port-desc{font-size:0.78rem;color:var(--muted);line-height:1.5;}
+  .btn-open{display:inline-flex;align-items:center;gap:8px;padding:13px 22px;background:linear-gradient(135deg,#0040dd,#00aaff);border:none;border-radius:10px;color:#fff;font-family:'Orbitron',monospace;font-size:0.8rem;font-weight:700;text-decoration:none;cursor:pointer;transition:all 0.2s;box-shadow:0 0 20px rgba(0,100,255,0.25);white-space:nowrap;}
+  .btn-open:hover{transform:translateY(-2px);box-shadow:0 0 40px rgba(0,100,255,0.5);}
+
+  /* STEP CARDS */
+  .step-card {
+    border-radius: 12px; padding: 18px;
+    border: 1px solid var(--border);
+    position: relative; overflow: hidden;
+  }
+  .step-card-1 { background: rgba(123,47,255,0.06); border-color: rgba(123,47,255,0.3); }
+  .step-card-2 { background: rgba(0,102,255,0.06); border-color: rgba(0,102,255,0.3); }
+  .step-badge {
+    display: inline-block;
+    font-family: 'Space Mono', monospace; font-size: 0.6rem; font-weight: 700;
+    letter-spacing: 0.15em;
+    padding: 3px 10px; border-radius: 100px;
+    margin-bottom: 12px;
+  }
+  .step-card-1 .step-badge { background: rgba(123,47,255,0.2); color: #b47fff; border: 1px solid rgba(123,47,255,0.4); }
+  .step-card-2 .step-badge { background: rgba(0,102,255,0.2); color: var(--accent); border: 1px solid rgba(0,102,255,0.4); }
+  .step-card-inner { display: flex; gap: 14px; align-items: flex-start; }
+  .step-card-icon { font-size: 1.6rem; flex-shrink: 0; }
+  .step-card-body { display: flex; flex-direction: column; gap: 6px; flex: 1; }
+  .step-card-title { font-family: 'Orbitron', monospace; font-size: 0.82rem; font-weight: 700; color: var(--text); }
+  .step-card-desc { font-size: 0.81rem; color: var(--muted); line-height: 1.65; }
+  .btn-step {
+    display: inline-flex; align-items: center;
+    margin-top: 6px; padding: 10px 18px;
+    background: rgba(123,47,255,0.15); border: 1px solid rgba(123,47,255,0.4);
+    border-radius: 8px; color: #b47fff;
+    font-family: 'Space Mono', monospace; font-size: 0.75rem;
+    text-decoration: none; transition: all 0.2s;
+  }
+  .btn-step:hover { background: rgba(123,47,255,0.3); color: #fff; }
+  .btn-step-win {
+    background: rgba(0,102,255,0.15); border-color: rgba(0,102,255,0.4); color: var(--accent);
+  }
+  .btn-step-win:hover { background: rgba(0,102,255,0.3); color: #fff; }
+
+  /* MY VMs */
+  .myvm-bar { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; margin-bottom:20px; }
+  .btn-load-vms { padding:10px 22px; background:transparent; border:1px solid var(--border); border-radius:8px; color:var(--accent); font-family:'Space Mono',monospace; font-size:0.78rem; cursor:pointer; transition:all 0.2s; }
+  .btn-load-vms:hover { border-color:var(--accent); background:rgba(0,200,255,0.07); }
+  .vm-list { display:flex; flex-direction:column; gap:12px; }
+  .vm-empty { text-align:center; padding:40px; color:var(--muted); font-size:0.88rem; background:var(--panel); border:1px solid var(--border); border-radius:12px; }
+  .vm-card { background:var(--panel); border:1px solid var(--border); border-radius:12px; padding:20px 22px; transition:border-color 0.2s; }
+  .vm-card:hover { border-color:rgba(0,200,255,0.35); }
+  .vm-card-header { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; margin-bottom:6px; }
+  .vm-name { font-family:'Orbitron',monospace; font-size:0.85rem; font-weight:700; color:var(--text); }
+  .vm-meta { font-size:0.78rem; color:var(--muted); margin-top:3px; }
+  .vm-state { font-family:'Space Mono',monospace; font-size:0.75rem; font-weight:700; white-space:nowrap; }
+  .vm-name-small { font-family:'Space Mono',monospace; font-size:0.7rem; color:var(--muted); margin-bottom:14px; }
+  .vm-actions { display:flex; gap:8px; flex-wrap:wrap; }
+  .btn-vm-action { padding:8px 16px; border-radius:7px; font-size:0.78rem; font-family:'Space Mono',monospace; cursor:pointer; border:none; text-decoration:none; transition:all 0.2s; display:inline-flex; align-items:center; gap:6px; }
+  .btn-vm-start { background:rgba(0,255,136,0.12); color:var(--green); border:1px solid rgba(0,255,136,0.3); }
+  .btn-vm-start:hover { background:rgba(0,255,136,0.25); }
+  .btn-vm-open  { background:rgba(0,102,255,0.15); color:var(--accent); border:1px solid rgba(0,102,255,0.3); }
+  .btn-vm-open:hover  { background:rgba(0,102,255,0.28); }
+  .btn-vm-port  { background:rgba(123,47,255,0.15); color:#b47fff; border:1px solid rgba(123,47,255,0.3); }
+  .btn-vm-port:hover  { background:rgba(123,47,255,0.28); }
+  .btn-vm-delete { background:rgba(255,68,102,0.1); color:var(--red); border:1px solid rgba(255,68,102,0.25); margin-left:auto; }
+  .btn-vm-delete:hover { background:rgba(255,68,102,0.22); }
+
+  /* STOP SECTION */
+  .stop-section{display:flex;flex-direction:column;gap:10px;}
+  .stop-divider{height:1px;background:linear-gradient(90deg,transparent,rgba(255,68,102,0.3),transparent);}
+  .stop-label{font-family:'Orbitron',monospace;font-size:0.75rem;font-weight:700;color:var(--red);letter-spacing:0.1em;}
+  .stop-desc{font-size:0.8rem;color:var(--muted);line-height:1.6;}
+  .btn-stop{align-self:flex-start;display:inline-flex;align-items:center;gap:8px;padding:12px 24px;background:rgba(255,204,0,0.1);border:1px solid rgba(255,204,0,0.35);border-radius:10px;color:var(--yellow);font-family:'Orbitron',monospace;font-size:0.82rem;font-weight:700;cursor:pointer;transition:all 0.2s;}
+  .btn-stop:hover:not(:disabled){background:rgba(255,204,0,0.2);border-color:var(--yellow);box-shadow:0 0 20px rgba(255,204,0,0.2);transform:translateY(-1px);}
+  .btn-stop:disabled{opacity:0.5;cursor:not-allowed;}
+
+  /* STEPS */
+  .steps{display:flex;flex-direction:column;gap:16px;}
+  .step{display:flex;gap:20px;align-items:flex-start;background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:22px 24px;transition:border-color 0.2s,transform 0.2s;}
+  .step:hover{border-color:rgba(0,200,255,0.35);transform:translateX(4px);}
+  .step-num{flex-shrink:0;width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--accent2),var(--accent));display:flex;align-items:center;justify-content:center;font-family:'Orbitron',monospace;font-size:0.85rem;font-weight:900;color:#fff;box-shadow:0 0 16px rgba(0,150,255,0.35);}
+  .step-body{flex:1;}
+  .step-title{font-family:'Orbitron',monospace;font-size:0.85rem;font-weight:700;margin-bottom:6px;color:var(--text);}
+  .step-desc{font-size:0.85rem;color:var(--muted);line-height:1.65;}
+  .step-desc a{color:var(--accent);text-decoration:none;}
+  .step-desc a:hover{text-decoration:underline;}
+  .step-desc code{color:var(--accent);background:rgba(0,200,255,0.1);padding:2px 8px;border-radius:4px;font-family:'Space Mono',monospace;font-size:0.8rem;}
+  .step-warn{margin-top:8px;display:flex;align-items:center;gap:8px;font-size:0.8rem;color:var(--yellow);background:rgba(255,204,0,0.07);border:1px solid rgba(255,204,0,0.18);border-radius:6px;padding:8px 12px;}
+
+  /* FEATURES */
+  .features{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:20px;}
+  .feature-card{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:28px 24px;transition:border-color 0.2s,transform 0.2s;}
+  .feature-card:hover{border-color:rgba(0,200,255,0.4);transform:translateY(-2px);}
+  .feature-icon{font-size:1.8rem;margin-bottom:16px;display:block;}
+  .feature-card h4{font-family:'Orbitron',monospace;font-size:0.85rem;font-weight:700;margin-bottom:10px;}
+  .feature-card p{font-size:0.85rem;color:var(--muted);line-height:1.65;}
+
+  /* SUPPORT */
+  .support-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px;margin-bottom:32px;}
+  .support-card{display:flex;gap:18px;align-items:flex-start;background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:24px;text-decoration:none;color:inherit;transition:border-color 0.2s,transform 0.2s,background 0.2s;position:relative;overflow:hidden;}
+  .support-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--accent),transparent);opacity:0;transition:opacity 0.3s;}
+  .support-card:hover{border-color:var(--accent);transform:translateY(-3px);background:rgba(0,200,255,0.04);}
+  .support-card:hover::before{opacity:1;}
+  .support-icon{font-size:1.8rem;flex-shrink:0;margin-top:2px;}
+  .support-body{display:flex;flex-direction:column;gap:6px;}
+  .support-title{font-family:'Orbitron',monospace;font-size:0.82rem;font-weight:700;color:var(--text);}
+  .support-desc{font-size:0.83rem;color:var(--muted);line-height:1.6;}
+  .support-link{font-size:0.78rem;color:var(--accent);font-family:'Space Mono',monospace;margin-top:4px;}
+  .status-banner{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px;background:rgba(0,255,136,0.04);border:1px solid rgba(0,255,136,0.2);border-radius:12px;padding:20px 24px;}
+  .status-banner-left{display:flex;align-items:center;gap:14px;}
+  .status-banner-dot{width:10px;height:10px;border-radius:50%;background:var(--green);box-shadow:0 0 10px var(--green);flex-shrink:0;animation:pulse 2s infinite;}
+  .status-banner-title{font-family:'Orbitron',monospace;font-size:0.82rem;font-weight:700;color:var(--green);margin-bottom:3px;}
+  .status-banner-desc{font-size:0.78rem;color:var(--muted);}
+  .status-banner-link{font-size:0.8rem;color:var(--accent);text-decoration:none;font-family:'Space Mono',monospace;white-space:nowrap;}
+  .status-banner-link:hover{text-decoration:underline;}
+
+  /* FOOTER */
+  footer{position:relative;z-index:1;border-top:1px solid var(--border);padding:40px 48px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px;}
+  footer .logo{font-size:0.9rem;}
+  .footer-link{color:var(--muted);font-size:0.8rem;text-decoration:none;transition:color 0.2s;}
+  .footer-link:hover{color:var(--accent);}
+
+  /* ── LOGIN OVERLAY ── */
+  .login-overlay{position:fixed;inset:0;z-index:999;background:rgba(2,8,16,0.97);backdrop-filter:blur(20px);display:flex;align-items:center;justify-content:center;padding:24px;}
+  .login-overlay.hidden{display:none;}
+  .login-box{background:var(--panel);border:1px solid var(--border);border-radius:20px;padding:40px 36px;width:100%;max-width:400px;display:flex;flex-direction:column;gap:20px;}
+  .login-logo{font-family:'Orbitron',monospace;font-weight:900;font-size:1.1rem;color:var(--accent);text-shadow:var(--glow-sm);display:flex;align-items:center;gap:10px;justify-content:center;}
+  .login-subtitle{text-align:center;color:var(--muted);font-size:0.85rem;}
+  .login-tabs{display:flex;background:#010a14;border-radius:10px;padding:4px;gap:4px;}
+  .ltab{flex:1;padding:10px;background:none;border:none;border-radius:8px;color:var(--muted);font-family:'Space Mono',monospace;font-size:0.78rem;cursor:pointer;transition:all 0.2s;}
+  .ltab.active{background:var(--accent2);color:#fff;box-shadow:0 0 20px rgba(0,102,255,0.3);}
+  .linput-wrap{display:flex;flex-direction:column;gap:6px;}
+  .linput-label{font-size:0.75rem;color:var(--muted);letter-spacing:0.05em;}
+  .linput{width:100%;background:#010a14;border:1px solid var(--border);border-radius:9px;padding:12px 44px 12px 14px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:0.9rem;outline:none;transition:border-color 0.2s,box-shadow 0.2s;}
+  .linput:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(0,200,255,0.1);}
+  .linput::placeholder{color:var(--muted);}
+  .lerr{font-size:0.78rem;color:var(--red);min-height:18px;}
+  .btn-login{width:100%;padding:15px;background:linear-gradient(135deg,var(--accent2),var(--accent));border:none;border-radius:10px;color:#fff;font-family:'Orbitron',monospace;font-size:0.88rem;font-weight:700;letter-spacing:0.08em;cursor:pointer;box-shadow:0 0 30px rgba(0,102,255,0.3);transition:all 0.2s;}
+  .btn-login:hover{transform:translateY(-2px);box-shadow:0 0 50px rgba(0,102,255,0.5);}
+
+  /* NAV USER */
+  .nav-user{display:flex;align-items:center;gap:8px;padding:6px 14px;background:rgba(0,200,255,0.08);border:1px solid var(--border);border-radius:100px;font-size:0.8rem;cursor:pointer;transition:all 0.2s;white-space:nowrap;}
+  .nav-user:hover{border-color:rgba(255,68,102,0.5);background:rgba(255,68,102,0.08);}
+  .nav-user:hover .nav-logout-tag{background:rgba(255,68,102,0.2);color:var(--red);border-color:rgba(255,68,102,0.4);}
+  .nav-user .u-avatar{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:700;color:#000;}
+  .nav-user.is-admin .u-avatar{background:linear-gradient(135deg,#ffcc00,#ff8800);}
+  .nav-user:not(.is-admin) .u-avatar{background:linear-gradient(135deg,var(--accent2),var(--accent));}
+  .nav-logout-tag{font-size:0.68rem;padding:2px 8px;background:rgba(0,200,255,0.08);border:1px solid rgba(0,200,255,0.2);border-radius:100px;color:var(--muted);transition:all 0.2s;}
+
+  /* ── LEADERBOARD ── */
+  .lb-wrap{display:flex;flex-direction:column;gap:10px;}
+  .lb-admin-row{display:flex;align-items:center;gap:16px;background:linear-gradient(135deg,rgba(255,204,0,0.08),rgba(255,136,0,0.05));border:1px solid rgba(255,204,0,0.3);border-radius:14px;padding:18px 22px;position:relative;overflow:hidden;}
+  .lb-admin-row::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,#ffcc00,transparent);}
+  .lb-rank{font-family:'Orbitron',monospace;font-size:1.1rem;font-weight:900;min-width:40px;text-align:center;}
+  .lb-admin-row .lb-rank{color:#ffcc00;text-shadow:0 0 15px rgba(255,204,0,0.5);}
+  .lb-info{flex:1;}
+  .lb-name{font-family:'Orbitron',monospace;font-size:0.9rem;font-weight:700;display:flex;align-items:center;gap:8px;}
+  .lb-admin-badge{font-size:0.6rem;padding:2px 8px;background:linear-gradient(135deg,#ffcc00,#ff8800);color:#000;border-radius:100px;font-weight:900;letter-spacing:0.1em;}
+  .lb-stat{font-size:0.78rem;color:var(--muted);margin-top:3px;}
+  .lb-score{font-family:'Orbitron',monospace;font-size:1rem;font-weight:700;color:#ffcc00;}
+  .lb-user-row{display:flex;align-items:center;gap:16px;background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:14px 20px;transition:border-color 0.2s;}
+  .lb-user-row:hover{border-color:rgba(0,200,255,0.3);}
+  .lb-user-row .lb-rank{color:var(--muted);font-size:0.9rem;}
+  .lb-user-row .lb-score{color:var(--accent);font-size:0.88rem;}
+  .lb-empty{text-align:center;padding:40px;color:var(--muted);font-size:0.88rem;background:var(--panel);border:1px solid var(--border);border-radius:12px;}
+
+  @keyframes fade-in{from{opacity:0}to{opacity:1}}
+  @keyframes fade-up{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+  @media(max-width:600px){
+    nav{padding:16px 20px;}
+    .nav-links{display:none;}
+    footer{padding:24px 20px;flex-direction:column;text-align:center;}
+    .launch-panel{flex-direction:column;}
+    .status-banner{flex-direction:column;}
+  }
+</style>
+</head>
+<body>
+<div class="aurora"></div>
+
+<!-- ── LOGIN OVERLAY ── -->
+<div id="loginOverlay" class="login-overlay">
+  <div class="login-box">
+    <div class="login-logo"><div class="logo-dot"></div>KIU CLOUD PC</div>
+    <div class="login-subtitle">Sign in to continue</div>
+
+    <div class="login-tabs">
+      <button class="ltab active" id="tabLogin" onclick="switchTab('login')">Sign In</button>
+      <button class="ltab" id="tabReg" onclick="switchTab('register')">Register</button>
+    </div>
+
+    <!-- Sign In -->
+    <div id="panelLogin">
+      <div class="linput-wrap">
+        <label class="linput-label">Username</label>
+        <input class="linput" id="loginUser" type="text" placeholder="Your username" autocomplete="username">
+      </div>
+      <div class="linput-wrap">
+        <label class="linput-label">Password</label>
+        <div style="position:relative">
+          <input class="linput" id="loginPass" type="password" placeholder="Your password" autocomplete="current-password">
+          <button class="eye-btn" onclick="togglePass('loginPass',this)">👁</button>
+        </div>
+      </div>
+      <div class="lerr" id="loginErr"></div>
+      <button class="btn-login" onclick="doLogin()">Sign In →</button>
+    </div>
+
+    <!-- Register -->
+    <div id="panelReg" style="display:none">
+      <div class="linput-wrap">
+        <label class="linput-label">Username</label>
+        <input class="linput" id="regUser" type="text" placeholder="Choose a username" autocomplete="username">
+      </div>
+      <div class="linput-wrap">
+        <label class="linput-label">Password</label>
+        <div style="position:relative">
+          <input class="linput" id="regPass" type="password" placeholder="Choose a password" autocomplete="new-password">
+          <button class="eye-btn" onclick="togglePass('regPass',this)">👁</button>
+        </div>
+      </div>
+      <div class="linput-wrap">
+        <label class="linput-label">Confirm Password</label>
+        <div style="position:relative">
+          <input class="linput" id="regPass2" type="password" placeholder="Repeat password" autocomplete="new-password">
+          <button class="eye-btn" onclick="togglePass('regPass2',this)">👁</button>
+        </div>
+      </div>
+      <div class="lerr" id="regErr"></div>
+      <button class="btn-login" onclick="doRegister()">Create Account →</button>
+    </div>
+  </div>
+</div>
+
+<nav>
+  <div style="display:flex;align-items:center;gap:12px">
+    <div class="logo"><div class="logo-dot"></div>KIU CLOUD PC</div>
+    <div class="nav-user-name" id="navUserName" style="display:none"></div>
+    <button class="nav-logout-btn" id="navLogoutBtn" onclick="logOut()" style="display:none">⏻ Log out</button>
+  </div>
+  <div class="nav-links">
+    <a href="#machines">Machines</a>
+    <a href="#my-vms">My VMs</a>
+    <a href="#leaderboard">Leaderboard</a>
+    <a href="#token-guide">Get Token</a>
+    <a href="#features">Features</a>
+    <a href="#support">Support</a>
+    <a href="https://github.com/KIUWIN11/dind" target="_blank">GitHub ↗</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="badge"><div class="badge-dot"></div>Windows 11 · GitHub Codespaces · QEMU</div>
+  <h1>Cloud PC<br><span class="blue">For Free</span> <span class="purple">Instantly</span></h1>
+  <p class="subtitle">Run full Windows 11 on GitHub Codespaces via Docker + QEMU.<br>Connect via RDP with Tailscale — fast, low latency.</p>
+  <div class="cta-group">
+    <a href="#machines" class="btn-primary">⚡ Create Cloud PC</a>
+    <a href="https://github.com/KIUWIN11/dind" target="_blank" class="btn-secondary">View repo →</a>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- MACHINES -->
+<section class="section" id="machines">
+  <div class="section-label reveal">// Select machine</div>
+  <div class="section-title reveal">Create your Cloud PC</div>
+  <div class="machines rg">
+    <div class="machine-card selected" onclick="selectMachine(this,'standardLinux32gb','Standard (4 cores · 16GB RAM)','30 hrs free/month')">
+      <div class="machine-name">Standard · Free ⭐</div>
+      <div class="machine-specs">
+        <div class="spec"><span>🖥️</span><span class="spec-val">4 Cores</span><span class="spec-label">CPU</span></div>
+        <div class="spec"><span>🧠</span><span class="spec-val">16 GB</span><span class="spec-label">RAM</span></div>
+        <div class="spec"><span>💾</span><span class="spec-val">118 GB</span><span class="spec-label">SSD</span></div>
+      </div>
+      <div class="machine-price">$0.36/hr</div>
+      <div class="machine-free">✓ 30 hrs free/month</div>
+    </div>
+    <div class="machine-card" onclick="selectMachine(this,'premiumLinux','Premium (8 cores · 32GB RAM)','15 hrs free/month')">
+      <div class="machine-name">Premium</div>
+      <div class="machine-specs">
+        <div class="spec"><span>🖥️</span><span class="spec-val">8 Cores</span><span class="spec-label">CPU</span></div>
+        <div class="spec"><span>🧠</span><span class="spec-val">32 GB</span><span class="spec-label">RAM</span></div>
+        <div class="spec"><span>💾</span><span class="spec-val">265 GB</span><span class="spec-label">SSD</span></div>
+      </div>
+      <div class="machine-price">$0.72/hr</div>
+      <div class="machine-free">✓ 15 hrs free/month</div>
+    </div>
+    <div class="machine-card" onclick="selectMachine(this,'largePremiumLinux','Large Premium (16 cores · 64GB RAM)','7.5 hrs free/month')">
+      <div class="machine-name">Large Premium</div>
+      <div class="machine-specs">
+        <div class="spec"><span>🖥️</span><span class="spec-val">16 Cores</span><span class="spec-label">CPU</span></div>
+        <div class="spec"><span>🧠</span><span class="spec-val">64 GB</span><span class="spec-label">RAM</span></div>
+        <div class="spec"><span>💾</span><span class="spec-val">560 GB</span><span class="spec-label">SSD</span></div>
+      </div>
+      <div class="machine-price">$1.44/hr</div>
+      <div class="machine-free">✓ 7.5 hrs free/month</div>
+    </div>
+    <div class="machine-card" onclick="selectMachine(this,'basicLinux32gb','Basic (2 cores · 8GB RAM)','60 hrs free/month')">
+      <div class="machine-name">Basic · Most Free</div>
+      <div class="machine-specs">
+        <div class="spec"><span>🖥️</span><span class="spec-val">2 Cores</span><span class="spec-label">CPU</span></div>
+        <div class="spec"><span>🧠</span><span class="spec-val">8 GB</span><span class="spec-label">RAM</span></div>
+        <div class="spec"><span>💾</span><span class="spec-val">44 GB</span><span class="spec-label">SSD</span></div>
+      </div>
+      <div class="machine-price">$0.18/hr</div>
+      <div class="machine-free">✓ 60 hrs free/month</div>
+    </div>
+  </div>
+
+  <div class="launch-panel reveal">
+    <div class="launch-left">
+      <div class="launch-info">
+        <h3 id="launchTitle">Standard (4 cores · 16GB RAM)</h3>
+        <p id="launchDesc">GitHub Free: <strong style="color:var(--green)">30 hrs free/month</strong> · Enter your token to automatically create a VM</p>
+      </div>
+      <div class="token-wrap">
+        <input class="token-input" id="tokenInput" type="password" placeholder="GitHub Token: ghp_xxxxxxxxxxxx">
+        <button class="eye-btn" onclick="toggleToken()" id="eyeBtn">👁</button>
+      </div>
+      <p class="token-hint">Requires <strong style="color:var(--accent)">codespace</strong> scope · <a href="#token-guide">How to get a token ↓</a> · Token is sent directly to GitHub API only — never stored.</p>
+      <div class="status-row"><div class="sdot" id="sdot"></div><span id="stxt">Ready · Standard (4 cores · 16GB RAM)</span></div>
+      <div class="log-box" id="logBox"></div>
+
+      <!-- RESULT DASHBOARD -->
+      <div class="result-card" id="resultCard">
+        <div class="r-title">🎉 VM Created Successfully!</div>
+        <div class="r-timestamp" id="rTimestamp">🕐 &nbsp;Created at: —</div>
+        <div class="r-rows" id="resultRows"></div>
+
+        <!-- STEP 1: Tailscale -->
+        <div class="step-card step-card-1">
+          <div class="step-badge">STEP 1</div>
+          <div class="step-card-inner">
+            <div class="step-card-icon">🔒</div>
+            <div class="step-card-body">
+              <div class="step-card-title">Login to Tailscale</div>
+              <div class="step-card-desc">Open your Codespace — a Tailscale auth link will appear in the terminal. Click it and sign in to connect your device to the VPN.</div>
+              <a id="openCodespaceBtn" href="#" target="_blank" class="btn-step">Open Codespace Terminal →</a>
+            </div>
+          </div>
+        </div>
+
+        <!-- STEP 2: Port 8006 -->
+        <div class="step-card step-card-2">
+          <div class="step-badge">STEP 2</div>
+          <div class="step-card-inner">
+            <div class="step-card-icon">🪟</div>
+            <div class="step-card-body">
+              <div class="step-card-title">Install Windows 11</div>
+              <div class="step-card-desc">After Tailscale is connected, open Port 8006 to see the live Windows installer running in your browser via noVNC. Available ~2–3 min after VM starts.</div>
+              <a id="port8006Btn" href="#" target="_blank" class="btn-step btn-step-win">Open Port 8006 (Windows) →</a>
+            </div>
+          </div>
+        </div>
+
+        <!-- Stop -->
+        <div class="stop-section">
+          <div class="stop-divider"></div>
+          <div class="stop-label">🛑 Stop VM</div>
+          <div class="stop-desc">Pauses this Codespace — your data is saved. You can resume it anytime from <strong style="color:var(--accent)">My VMs</strong> below.</div>
+          <button class="btn-stop" id="stopBtn" onclick="stopCodespace()">⏹ &nbsp;Stop VM</button>
+        </div>
+      </div>
+    </div>
+    <button class="launch-btn" id="launchBtn" onclick="createCodespace()"><span style="font-size:1.3rem">⊞</span> Create Cloud PC</button>
+  </div>
+</section>
+
+<section class="section" id="my-vms">
+  <div class="section-label reveal">// Your machines</div>
+  <div class="section-title reveal">My VMs</div>
+
+  <div class="myvm-bar reveal">
+    <div style="font-size:0.85rem;color:var(--muted)">Enter your token above then click Load to see all your Codespaces.</div>
+    <button class="btn-load-vms" onclick="loadMyVMs()">⟳ &nbsp;Load My VMs</button>
+  </div>
+
+  <div id="vmList" class="vm-list"></div>
+</section>
+
+<div class="divider"></div>
+
+<section class="section" id="token-guide">
+  <div class="section-label reveal">// How to get a GitHub Token</div>
+  <div class="section-title reveal">Get Your GitHub Token</div>
+  <div class="steps">
+    <div class="step reveal">
+      <div class="step-num">1</div>
+      <div class="step-body">
+        <div class="step-title">Go to GitHub Token Settings</div>
+        <div class="step-desc">Click below — it opens GitHub with the <code>codespace</code> scope already checked.<br><br>👉 <a href="https://github.com/settings/tokens/new?scopes=codespace&description=KIU+Cloud+PC" target="_blank">github.com/settings/tokens/new →</a></div>
+      </div>
+    </div>
+    <div class="step reveal">
+      <div class="step-num">2</div>
+      <div class="step-body">
+        <div class="step-title">Sign in to GitHub</div>
+        <div class="step-desc">If not already signed in, GitHub will prompt you to log in first.</div>
+      </div>
+    </div>
+    <div class="step reveal">
+      <div class="step-num">3</div>
+      <div class="step-body">
+        <div class="step-title">Set Expiration (Optional)</div>
+        <div class="step-desc">Choose how long the token lasts — <code>30 days</code>, <code>90 days</code>, or <code>No expiration</code>.</div>
+      </div>
+    </div>
+    <div class="step reveal">
+      <div class="step-num">4</div>
+      <div class="step-body">
+        <div class="step-title">Click "Generate token"</div>
+        <div class="step-desc">The <code>codespace</code> permission is already ticked. Scroll to the bottom and click the green <strong style="color:var(--green)">"Generate token"</strong> button.</div>
+      </div>
+    </div>
+    <div class="step reveal">
+      <div class="step-num">5</div>
+      <div class="step-body">
+        <div class="step-title">Copy Your Token</div>
+        <div class="step-desc">Your token starts with <code>ghp_...</code>. Copy it immediately.
+          <div class="step-warn">⚠️ The token is only shown <strong>once</strong>. If you close the page, you'll need to generate a new one.</div>
+        </div>
+      </div>
+    </div>
+    <div class="step reveal">
+      <div class="step-num">6</div>
+      <div class="step-body">
+        <div class="step-title">Paste into the Token Field Above</div>
+        <div class="step-desc">Go back to <a href="#machines">Create Cloud PC</a>, paste your token, select a machine, and hit <strong style="color:var(--accent)">"Create Cloud PC"</strong>. Done! 🎉</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- LEADERBOARD -->
+<section class="section" id="leaderboard">
+  <div class="section-label reveal">// Top users</div>
+  <div class="section-title reveal">Leaderboard</div>
+  <div id="lbContent" class="lb-wrap reveal"></div>
+</section>
+
+<div class="divider"></div>
+
+<!-- FEATURES -->
+<section class="section" id="features">
+  <div class="section-label reveal">// Why KIU Cloud PC</div>
+  <div class="section-title reveal">Key Features</div>
+  <div class="features rg">
+    <div class="feature-card"><span class="feature-icon">⚡</span><h4>AMD EPYC™ 7763</h4><p>Latest-gen AMD CPU — outperforms many paid cloud services in raw benchmark scores.</p></div>
+    <div class="feature-card"><span class="feature-icon">🔒</span><h4>Peer-to-peer via Tailscale</h4><p>Direct P2P RDP connection — lowest possible latency, no relay servers, no credit card needed.</p></div>
+    <div class="feature-card"><span class="feature-icon">🆓</span><h4>Free every month</h4><p>GitHub Free gives 120 core-hours/month. Basic = 60 hrs, Standard = 30 hrs of Windows per month.</p></div>
+    <div class="feature-card"><span class="feature-icon">🪟</span><h4>Full Windows 11</h4><p>Based on dockur/windows, optimized for Codespaces. Mica effects, rounded corners, full feature set.</p></div>
+    <div class="feature-card"><span class="feature-icon">🌏</span><h4>10+ global regions</h4><p>Singapore, Australia, UK, US and more. Automatically assigned to the region closest to you.</p></div>
+    <div class="feature-card"><span class="feature-icon">🛠️</span><h4>Simple commands</h4><p>Use <code style="color:var(--accent);background:rgba(0,200,255,0.1);padding:2px 6px;border-radius:4px">start</code> / <code style="color:var(--accent);background:rgba(0,200,255,0.1);padding:2px 6px;border-radius:4px">stop</code> / <code style="color:var(--accent);background:rgba(0,200,255,0.1);padding:2px 6px;border-radius:4px">restart</code> directly in the terminal.</p></div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- SUPPORT -->
+<section class="section" id="support">
+  <div class="section-label reveal">// Need help?</div>
+  <div class="section-title reveal">Contact &amp; Support</div>
+  <div class="support-grid rg">
+    <a class="support-card" href="https://github.com/KIUWIN11/dind/issues/new" target="_blank">
+      <div class="support-icon">🐛</div>
+      <div class="support-body"><div class="support-title">Report a Bug</div><div class="support-desc">Found something broken? Open an issue on GitHub and we'll look into it.</div><div class="support-link">Open an issue →</div></div>
+    </a>
+    <a class="support-card" href="https://github.com/KIUWIN11/dind/discussions" target="_blank">
+      <div class="support-icon">💬</div>
+      <div class="support-body"><div class="support-title">Community Discussions</div><div class="support-desc">Ask questions, share tips, and get help from the community on GitHub.</div><div class="support-link">Join discussions →</div></div>
+    </a>
+    <a class="support-card" href="/cdn-cgi/l/email-protection#9cefe9ececf3eee8dcf7f5e9fff0f3e9f8ecffb2f8f9ea">
+      <div class="support-icon">✉️</div>
+      <div class="support-body"><div class="support-title">Email Support</div><div class="support-desc">For private inquiries or account-related issues, reach us by email.</div><div class="support-link"><span class="__cf_email__" data-cfemail="4e3d3b3e3e213c3a0e25273b2d22213b2a3e2d602a2b38">[email&#160;protected]</span> →</div></div>
+    </a>
+    <a class="support-card" href="https://github.com/KIUWIN11/dind" target="_blank">
+      <div class="support-icon">📦</div>
+      <div class="support-body"><div class="support-title">View Source Code</div><div class="support-desc">Fully open source on GitHub. Star, fork, or contribute a fix anytime.</div><div class="support-link">github.com/KIUWIN11/dind →</div></div>
+    </a>
+  </div>
+  <div class="status-banner reveal">
+    <div class="status-banner-left">
+      <div class="status-banner-dot"></div>
+      <div><div class="status-banner-title">All systems operational</div><div class="status-banner-desc">GitHub Codespaces is running normally. No reported incidents.</div></div>
+    </div>
+    <a href="https://www.githubstatus.com/" target="_blank" class="status-banner-link">GitHub Status →</a>
+  </div>
+</section>
+
+<footer>
+  <div class="logo"><div class="logo-dot"></div>KIU CLOUD PC</div>
+  <p style="color:var(--muted);font-size:0.8rem">© 2025 KIU Cloud PC. All rights reserved.</p>
+  <div style="display:flex;gap:20px">
+    <a href="https://github.com/KIUWIN11/dind" target="_blank" class="footer-link">GitHub</a>
+    <a href="#support" class="footer-link">Support</a>
+    <a href="#token-guide" class="footer-link">Docs</a>
+  </div>
+</footer>
+
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+  /* SCROLL REVEAL */
+  document.querySelectorAll('.reveal,.rg').forEach(el => el.classList.add('rdy'));
+  const obs = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (e.isIntersecting) { e.target.classList.add('vis'); e.target.classList.remove('up'); }
+      else {
+        const r = e.boundingClientRect;
+        if (r.top < 0) { e.target.classList.add('up'); e.target.classList.remove('vis'); }
+        else { e.target.classList.remove('vis','up'); }
+      }
+    });
+  }, { threshold: 0.12, rootMargin: '0px 0px -60px 0px' });
+  document.querySelectorAll('.reveal,.rg').forEach(el => obs.observe(el));
+
+  /* STATE */
+  let selMachine = 'standardLinux32gb';
+  let selLabel = 'Standard (4 cores · 16GB RAM)';
+  let savedToken = '';
+  let savedName = '';
+
+  function selectMachine(el, id, label, free) {
+    selMachine = id; selLabel = label;
+    document.querySelectorAll('.machine-card').forEach(c => c.classList.remove('selected'));
+    el.classList.add('selected');
+    document.getElementById('launchTitle').textContent = label;
+    document.getElementById('launchDesc').innerHTML = `GitHub Free: <strong style="color:var(--green)">${free}</strong> · Enter your token to automatically create a VM`;
+    setStatus('', `Ready · ${label}`);
+  }
+
+  function toggleToken() {
+    const i = document.getElementById('tokenInput'), e = document.getElementById('eyeBtn');
+    i.type = i.type === 'password' ? 'text' : 'password';
+    e.textContent = i.type === 'password' ? '👁' : '🙈';
+  }
+
+  function setStatus(state, txt) {
+    const d = document.getElementById('sdot');
+    document.getElementById('stxt').textContent = txt;
+    d.className = 'sdot' + (state === 'spin' ? ' spin' : state === 'ok' ? ' ok' : state === 'err' ? ' err' : '');
+  }
+
+  function log(html, cls = 'c-info') {
+    const b = document.getElementById('logBox');
+    b.classList.add('show');
+    b.innerHTML += `<div class="lg ${cls}">${html}</div>`;
+    b.scrollTop = b.scrollHeight;
+  }
+
+  async function createCodespace() {
+    const token = document.getElementById('tokenInput').value.trim();
+    if (!token) { document.getElementById('logBox').innerHTML = ''; log('⚠️ Please enter your GitHub Token first!', 'c-warn'); document.getElementById('tokenInput').focus(); return; }
+    if (!token.startsWith('ghp_') && !token.startsWith('github_pat_')) { document.getElementById('logBox').innerHTML = ''; log('⚠️ Invalid format. Must start with <span class="c-hi">ghp_</span> or <span class="c-hi">github_pat_</span>', 'c-warn'); return; }
+
+    document.getElementById('logBox').innerHTML = '';
+    document.getElementById('resultCard').classList.remove('show');
+    document.getElementById('launchBtn').disabled = true;
+    setStatus('spin', 'Verifying token...');
+    log('🔌 Verifying token...', 'c-info');
+
+    try {
+      const r = await fetch('https://api.github.com/user', { headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28' } });
+      const d = await r.json();
+      if (!r.ok) { log(`❌ Invalid token: ${d.message}`, 'c-err'); log('👉 <a style="color:var(--accent)" href="https://github.com/settings/tokens/new?scopes=codespace" target="_blank">Create a new token →</a>', 'c-warn'); setStatus('err', 'Invalid token'); done(); return; }
+      log(`✅ Authenticated as: <span class="c-hi">@${d.login}</span>`, 'c-ok');
+    } catch(e) { log(`❌ Network error: ${e.message}`, 'c-err'); setStatus('err', 'Connection error'); done(); return; }
+
+    log(`📦 Repo: <span class="c-hi">KIUWIN11/dind</span>`, 'c-info');
+    log(`🖥️ Machine: <span class="c-hi">${selLabel}</span>`, 'c-info');
+    setStatus('spin', 'Creating Codespace...');
+    log('⚙️ Sending create request...', 'c-info');
+
+    try {
+      const r = await fetch('https://api.github.com/repos/KIUWIN11/dind/codespaces', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/vnd.github+json', 'Content-Type': 'application/json', 'X-GitHub-Api-Version': '2022-11-28' },
+        body: JSON.stringify({ machine: selMachine, idle_timeout_minutes: 240, retention_period_minutes: 43200, devcontainer_path: '.devcontainer/devcontainer.json' })
+      });
+      const d = await r.json();
+
+      if (!r.ok) {
+        const msgs = { 401: 'Token expired or missing <strong>codespace</strong> scope.', 403: `Forbidden: ${d.message}`, 422: `Config error: ${d.message}` };
+        log(`❌ Error ${r.status}: ${msgs[r.status] || d.message}`, 'c-err');
+        if (r.status === 401) log('👉 <a style="color:var(--accent)" href="#token-guide">See how to get a token ↓</a>', 'c-warn');
+        setStatus('err', `Failed (${r.status})`); done(); return;
+      }
+
+      savedToken = token; savedName = d.name;
+      trackVMCreated();
+
+      /* Timestamp */
+      const now = new Date();
+      const p = n => String(n).padStart(2,'0');
+      const ts = `${now.getFullYear()}-${p(now.getMonth()+1)}-${p(now.getDate())}  ${p(now.getHours())}:${p(now.getMinutes())}:${p(now.getSeconds())}`;
+      document.getElementById('rTimestamp').innerHTML = `🕐 &nbsp;<span style="color:var(--accent)">Created at:</span> &nbsp;${ts}`;
+
+      /* Port 8006 & Codespace links */
+      const port8006 = `https://${d.name}-8006.app.github.dev/`;
+      document.getElementById('port8006Btn').href = port8006;
+      document.getElementById('openCodespaceBtn').href = d.web_url;
+
+      log(`✅ Codespace created!`, 'c-ok');
+      log(`📛 Name: <span class="c-hi">${d.name}</span>`, 'c-ok');
+      log(`📍 Region: <span class="c-hi">${d.location || 'Auto'}</span>`, 'c-info');
+      log(`🌐 Port 8006: <a style="color:var(--accent)" href="${port8006}" target="_blank">${port8006}</a>`, 'c-ok');
+      log('💡 Port 8006 opens ~2–3 min after Codespace starts.', 'c-warn');
+      setStatus('ok', 'VM created successfully! 🎉');
+
+      document.getElementById('resultRows').innerHTML = `
+        <div class="r-row"><span class="r-lbl">Codespace name</span><span class="r-val">${d.name}</span></div>
+        <div class="r-row"><span class="r-lbl">Machine</span><span class="r-val">${d.machine?.display_name || selLabel}</span></div>
+        <div class="r-row"><span class="r-lbl">Region</span><span class="r-val">${d.location || 'Auto'}</span></div>
+        <div class="r-row"><span class="r-lbl">Status</span><span class="r-val" style="color:var(--green)">${d.state}</span></div>
+      `;
+      document.getElementById('resultCard').classList.add('show');
+      setTimeout(() => document.getElementById('resultCard').scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 300);
+
+    } catch(e) { log(`❌ Error: ${e.message}`, 'c-err'); setStatus('err', 'Unknown error'); }
+    done();
+  }
+
+  async function stopCodespace() {
+    if (!savedName || !savedToken) { alert('No active VM found.'); return; }
+
+    const btn = document.getElementById('stopBtn');
+    btn.disabled = true; btn.textContent = '⏳  Stopping...';
+
+    try {
+      const r = await fetch(`https://api.github.com/user/codespaces/${savedName}/stop`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${savedToken}`, 'Accept': 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28' }
+      });
+
+      if (r.ok || r.status === 202) {
+        document.getElementById('resultCard').classList.remove('show');
+        document.getElementById('logBox').innerHTML = '';
+        log(`⏹ VM <span class="c-hi">${savedName}</span> stopped. Your data is saved.`, 'c-ok');
+        log('💡 Go to <strong style="color:var(--accent)">My VMs</strong> below to resume it anytime.', 'c-info');
+        setStatus('', 'VM stopped · Ready to create a new one');
+        // auto reload the VM list
+        await loadMyVMs();
+        document.getElementById('my-vms').scrollIntoView({ behavior: 'smooth' });
+      } else {
+        const d = await r.json();
+        btn.disabled = false; btn.innerHTML = '⏹ &nbsp;Stop VM';
+        log(`❌ Stop failed (${r.status}): ${d.message}`, 'c-err');
+      }
+    } catch(e) {
+      btn.disabled = false; btn.innerHTML = '⏹ &nbsp;Stop VM';
+      log(`❌ Network error: ${e.message}`, 'c-err');
+    }
+  }
+
+  async function loadMyVMs() {
+    const token = document.getElementById('tokenInput').value.trim() || savedToken;
+    const list = document.getElementById('vmList');
+
+    if (!token) {
+      list.innerHTML = `<div class="vm-empty">⚠️ Please enter your GitHub Token above first.</div>`;
+      return;
+    }
+
+    list.innerHTML = `<div class="vm-empty" style="color:var(--accent)">⟳ Loading your VMs...</div>`;
+
+    try {
+      const r = await fetch('https://api.github.com/user/codespaces', {
+        headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28' }
+      });
+      const d = await r.json();
+
+      if (!r.ok) { list.innerHTML = `<div class="vm-empty c-err">❌ ${d.message}</div>`; return; }
+
+      const vms = d.codespaces || [];
+      if (vms.length === 0) {
+        list.innerHTML = `<div class="vm-empty">No Codespaces found. Create one above!</div>`;
+        return;
+      }
+
+      list.innerHTML = vms.map(vm => {
+        const isRunning = vm.state === 'Available';
+        const isStopped = vm.state === 'Shutdown' || vm.state === 'Stopped';
+        const stateColor = isRunning ? 'var(--green)' : isStopped ? 'var(--yellow)' : 'var(--muted)';
+        const stateIcon  = isRunning ? '🟢' : isStopped ? '🟡' : '⚪';
+        const port8006   = `https://${vm.name}-8006.app.github.dev/`;
+
+        return `
+        <div class="vm-card">
+          <div class="vm-card-header">
+            <div>
+              <div class="vm-name">${vm.display_name || vm.name}</div>
+              <div class="vm-meta">${vm.machine?.display_name || '—'} &nbsp;·&nbsp; ${vm.location || 'Auto'}</div>
+            </div>
+            <div class="vm-state" style="color:${stateColor}">${stateIcon} ${vm.state}</div>
+          </div>
+          <div class="vm-name-small">${vm.name}</div>
+          <div class="vm-actions">
+            ${isStopped ? `<button class="btn-vm-action btn-vm-start" onclick="resumeVM('${vm.name}','${token}')">▶ Resume</button>` : ''}
+            ${isRunning ? `<a href="${vm.web_url}" target="_blank" class="btn-vm-action btn-vm-open">⊞ Open</a>
+                           <a href="${port8006}" target="_blank" class="btn-vm-action btn-vm-port">🪟 Port 8006</a>
+                           <button class="btn-vm-action btn-vm-delete" style="background:rgba(255,204,0,0.1);color:var(--yellow);border-color:rgba(255,204,0,0.3)" onclick="stopVM('${vm.name}','${token}')">⏹ Stop</button>` : ''}
+            <button class="btn-vm-action btn-vm-delete" onclick="deleteVM('${vm.name}','${token}')">🗑 Delete</button>
+          </div>
+        </div>`;
+      }).join('');
+
+    } catch(e) {
+      list.innerHTML = `<div class="vm-empty c-err">❌ Network error: ${e.message}</div>`;
+    }
+  }
+
+  async function stopVM(name, token) {
+    const btn = event.target;
+    btn.disabled = true; btn.textContent = '⏳ Stopping...';
+    try {
+      const r = await fetch(`https://api.github.com/user/codespaces/${name}/stop`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28' }
+      });
+      if (r.ok || r.status === 202) {
+        btn.textContent = '✅ Stopped';
+        setTimeout(() => loadMyVMs(), 3000);
+      } else {
+        const d = await r.json();
+        btn.disabled = false; btn.textContent = '⏹ Stop';
+        alert(`Failed: ${d.message}`);
+      }
+    } catch(e) { btn.disabled = false; btn.textContent = '⏹ Stop'; alert(e.message); }
+  }
+
+  async function resumeVM(name, token) {
+    const btn = event.target;
+    btn.disabled = true; btn.textContent = '⟳ Starting...';
+    try {
+      const r = await fetch(`https://api.github.com/user/codespaces/${name}/start`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28' }
+      });
+      if (r.ok || r.status === 202) {
+        btn.textContent = '✅ Starting...';
+        setTimeout(() => loadMyVMs(), 4000);
+      } else {
+        const d = await r.json();
+        btn.disabled = false; btn.textContent = '▶ Resume';
+        alert(`Failed: ${d.message}`);
+      }
+    } catch(e) { btn.disabled = false; btn.textContent = '▶ Resume'; alert(e.message); }
+  }
+
+  async function deleteVM(name, token) {
+    if (!confirm(`Permanently DELETE the VM "${name}"?\n\nThis cannot be undone.`)) return;
+    try {
+      await fetch(`https://api.github.com/user/codespaces/${name}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28' }
+      });
+      loadMyVMs();
+    } catch(e) { alert(e.message); }
+  }
+
+  /* ══════════════════════════════
+  });
+
+  function done() { document.getElementById('launchBtn').disabled = false; }
+
+  /* ══════════════════════════════
+     AUTH + LEADERBOARD
+  ══════════════════════════════ */
+  const ADMIN_USER = 'happyghastqwq';
+  const ADMIN_PASS = 'kiubby';
+  let currentUser = null;
+
+  function getUsers() { try { return JSON.parse(localStorage.getItem('kiu_users') || '{}'); } catch { return {}; } }
+  function saveUsers(u) { localStorage.setItem('kiu_users', JSON.stringify(u)); }
+  function getSession() { return localStorage.getItem('kiu_session'); }
+  function saveSession(u) { localStorage.setItem('kiu_session', u); }
+  function clearSession() { localStorage.removeItem('kiu_session'); }
+
+  function switchTab(tab) {
+    document.getElementById('panelLogin').style.display = tab === 'login' ? '' : 'none';
+    document.getElementById('panelReg').style.display  = tab === 'register' ? '' : 'none';
+    document.getElementById('tabLogin').classList.toggle('active', tab === 'login');
+    document.getElementById('tabReg').classList.toggle('active', tab === 'register');
+    document.getElementById('loginErr').textContent = '';
+    document.getElementById('regErr').textContent = '';
+  }
+
+  function togglePass(id, btn) {
+    const el = document.getElementById(id);
+    el.type = el.type === 'password' ? 'text' : 'password';
+    btn.textContent = el.type === 'password' ? '👁' : '🙈';
+  }
+
+  function doLogin() {
+    const user = document.getElementById('loginUser').value.trim().toLowerCase();
+    const pass = document.getElementById('loginPass').value.trim().toLowerCase();
+    const err  = document.getElementById('loginErr');
+    if (!user || !pass) { err.textContent = 'Please fill in all fields.'; return; }
+    if (user === ADMIN_USER && pass === ADMIN_PASS) { loginSuccess('HappyGhastQwQ', true); return; }
+    const users = getUsers();
+    if (!users[user]) { err.textContent = 'Account not found. Please register first.'; return; }
+    if (users[user].pass !== pass) { err.textContent = 'Wrong password. Try again.'; return; }
+    loginSuccess(users[user].displayName, false);
+  }
+
+  function doRegister() {
+    const user  = document.getElementById('regUser').value.trim();
+    const pass  = document.getElementById('regPass').value.trim().toLowerCase();
+    const pass2 = document.getElementById('regPass2').value.trim().toLowerCase();
+    const err   = document.getElementById('regErr');
+    if (!user || !pass || !pass2) { err.textContent = 'Please fill in all fields.'; return; }
+    if (user.length < 3) { err.textContent = 'Username must be at least 3 characters.'; return; }
+    if (pass.length < 4) { err.textContent = 'Password must be at least 4 characters.'; return; }
+    if (pass !== pass2) { err.textContent = 'Passwords do not match.'; return; }
+    if (user.toLowerCase() === ADMIN_USER) { err.textContent = 'This username is reserved.'; return; }
+    const users = getUsers();
+    if (users[user.toLowerCase()]) { err.textContent = 'Username already taken.'; return; }
+    users[user.toLowerCase()] = { displayName: user, pass, vms: 0 };
+    saveUsers(users);
+    loginSuccess(user, false);
+  }
+
+  function loginSuccess(displayName, isAdmin) {
+    currentUser = { displayName, isAdmin };
+    saveSession(JSON.stringify(currentUser));
+    document.getElementById('loginOverlay').classList.add('hidden');
+    const nu = document.getElementById('navUserName');
+    nu.className = 'nav-user-name' + (isAdmin ? ' is-admin' : '');
+    nu.innerHTML = `<div class="u-avatar">${displayName[0].toUpperCase()}</div><span>${displayName}</span>`;
+    nu.style.display = '';
+    document.getElementById('navLogoutBtn').style.display = '';
+    renderLeaderboard();
+  }
+
+  function logOut() {
+    clearSession(); currentUser = null;
+    document.getElementById('loginOverlay').classList.remove('hidden');
+    const nu = document.getElementById('navUserName');
+    nu.innerHTML = '';
+    nu.style.display = 'none';
+    document.getElementById('navLogoutBtn').style.display = 'none';
+    document.getElementById('loginUser').value = '';
+    document.getElementById('loginPass').value = '';
+  }
+
+  function trackVMCreated() {
+    if (!currentUser || currentUser.isAdmin) return;
+    const users = getUsers();
+    const key = currentUser.displayName.toLowerCase();
+    if (users[key]) { users[key].vms = (users[key].vms || 0) + 1; saveUsers(users); }
+    renderLeaderboard();
+  }
+
+  function renderLeaderboard() {
+    const el = document.getElementById('lbContent');
+    if (!el) return;
+    const users = getUsers();
+    const sorted = Object.values(users).sort((a,b) => (b.vms||0) - (a.vms||0));
+
+    let html = `
+    <div class="lb-admin-row">
+      <div class="lb-rank">👑</div>
+      <div class="lb-info">
+        <div class="lb-name">HappyGhastQwQ <span class="lb-admin-badge">ADMIN</span></div>
+        <div class="lb-stat">Site owner · All privileges</div>
+      </div>
+      <div class="lb-score">∞ VMs</div>
+    </div>`;
+
+    if (sorted.length === 0) {
+      html += `<div class="lb-empty">No users yet — be the first to register!</div>`;
+    } else {
+      sorted.forEach((u, i) => {
+        const isMe = currentUser && u.displayName.toLowerCase() === currentUser.displayName.toLowerCase();
+        html += `
+        <div class="lb-user-row" style="${isMe ? 'border-color:rgba(0,200,255,0.4);background:rgba(0,200,255,0.04)' : ''}">
+          <div class="lb-rank">#${i + 2}</div>
+          <div class="lb-info">
+            <div class="lb-name">${u.displayName}${isMe ? ' <span style="font-size:0.65rem;color:var(--accent);background:rgba(0,200,255,0.1);padding:2px 7px;border-radius:4px">YOU</span>' : ''}</div>
+            <div class="lb-stat">Member</div>
+          </div>
+          <div class="lb-score">${u.vms || 0} VMs</div>
+        </div>`;
+      });
+    }
+    el.innerHTML = html;
+  }
+
+  // Enter key support for login
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !document.getElementById('loginOverlay').classList.contains('hidden')) {
+      const activePanel = document.getElementById('panelLogin').style.display !== 'none';
+      if (activePanel) doLogin(); else doRegister();
+    }
+  });
+
+  // Auto restore session on load
+  window.addEventListener('DOMContentLoaded', () => {
+    const sess = getSession();
+    if (sess) {
+      try { const u = JSON.parse(sess); loginSuccess(u.displayName, u.isAdmin); }
+      catch { clearSession(); }
+    }
+    renderLeaderboard();
+  });
+</script>
+</body>
+</html>
